@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProtoQol | Infrastructure of Trust</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #020617; /* Deepest slate */
+            --blue-glow: #0ea5e9;
+            --blue-dark: #0369a1;
+            --blue-neon: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(15, 23, 42, 0.4);
+            --glass-border: rgba(56, 189, 248, 0.15);
+            --glass-highlight: rgba(56, 189, 248, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; 
+            height: 100vh;
+            width: 100vw;
+            perspective: 1000px;
+        }
+
+        /* --- Ambient Background & Grid --- */
+        .ambient-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .cyber-grid {
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background-image: 
+                linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+            animation: gridMove 20s linear infinite;
+            opacity: 0.4;
+        }
+
+        @keyframes gridMove {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(60px) translateZ(-200px); }
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.5;
+            transition: transform 0.2s ease-out;
+        }
+        .orb-1 { width: 70vw; height: 70vw; max-width: 700px; max-height: 700px; background: var(--blue-dark); top: -10%; left: -10%; }
+        .orb-2 { width: 60vw; height: 60vw; max-width: 600px; max-height: 600px; background: #1e1b4b; bottom: -10%; right: -10%; }
+        .orb-3 { width: 50vw; height: 50vw; max-width: 500px; max-height: 500px; background: var(--blue-glow); top: 30%; left: 50%; opacity: 0.2; transform: translateX(-50%); mix-blend-mode: screen; }
+
+        /* --- Presentation Core --- */
+        #deck {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(1.05);
+            filter: blur(20px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                        visibility 0.8s, 
+                        transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+                        filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: clamp(20px, 5vh, 60px) 8%;
+            overflow-y: auto; /* Allow scrolling on small devices */
+            overflow-x: hidden;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+            filter: blur(0);
+        }
+
+        /* Container to center content properly even with scroll */
+        .slide-content-wrapper {
+            width: 100%;
+            max-width: 1400px;
+            margin: auto;
+            padding: 40px 0 100px 0; /* Extra bottom padding for nav */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100%;
+        }
+
+        /* --- Typography (Fluid & Responsive) --- */
+        h1, h2, h3 { font-family: 'Montserrat', sans-serif; }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, var(--blue-neon) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+        }
+
+        h1 { font-size: clamp(3rem, 8vw, 6rem); font-weight: 900; letter-spacing: -0.05em; line-height: 1.1; margin-bottom: 1rem; }
+        h2 { font-size: clamp(2rem, 5vw, 3.8rem); font-weight: 800; letter-spacing: -0.03em; margin-bottom: clamp(1.5rem, 4vw, 2.5rem); text-align: center; }
+        h3 { font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: 700; margin-bottom: 1rem; color: var(--text-main); }
+        p { font-size: clamp(1rem, 2vw, 1.3rem); line-height: 1.6; color: var(--text-muted); font-weight: 300; }
+
+        .hero-subtitle { font-size: clamp(0.9rem, 2vw, 1.6rem); color: var(--blue-neon); text-transform: uppercase; letter-spacing: 6px; font-weight: 700; margin-bottom: 1rem; display: block; text-shadow: 0 0 15px rgba(56, 189, 248, 0.5); }
+        .hero-desc { font-size: clamp(1.1rem, 3vw, 1.8rem); max-width: 800px; margin-top: 1.5rem; color: #cbd5e1; }
+        
+        .metric-big { font-size: clamp(3.5rem, 10vw, 6.5rem); font-family: 'Montserrat'; font-weight: 900; line-height: 1; margin-bottom: 0.5rem; }
+        .metric-label { font-size: clamp(0.9rem, 2vw, 1.3rem); text-transform: uppercase; letter-spacing: 3px; color: var(--text-muted); font-weight: 600; }
+        
+        .step-number { font-size: clamp(3rem, 8vw, 5rem); font-weight: 900; color: transparent; -webkit-text-stroke: 2px rgba(56, 189, 248, 0.3); line-height: 1; margin-bottom: 1.5rem; }
+
+        /* --- Layouts & Components --- */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(2rem, 5vw, 4rem); align-items: center; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.5rem, 3vw, 2.5rem); }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: clamp(1.5rem, 4vw, 3.5rem);
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+            overflow: hidden;
+            height: 100%; /* Fix height for grid items */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 24px; padding: 2px;
+            background: linear-gradient(135deg, var(--blue-neon), transparent, transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 40px 80px -20px rgba(14, 165, 233, 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .glass-card:hover::before { opacity: 1; }
+
+        .icon-box {
+            width: clamp(60px, 8vw, 80px); height: clamp(60px, 8vw, 80px);
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(14, 165, 233, 0.05));
+            border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(24px, 4vw, 36px); color: var(--blue-neon);
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+        }
+
+        .contact-pills { display: flex; gap: 1rem; margin-top: clamp(2rem, 5vw, 4rem); flex-wrap: wrap; }
+        .pill { 
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); 
+            padding: clamp(0.6rem, 2vw, 1rem) clamp(1rem, 3vw, 2rem); 
+            border-radius: 50px; font-size: clamp(0.9rem, 1.5vw, 1.1rem); font-weight: 500; 
+            display: flex; align-items: center; gap: 0.8rem; backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            width: fit-content;
+        }
+        .pill:hover { background: rgba(56, 189, 248, 0.1); border-color: var(--blue-neon); transform: translateY(-3px); box-shadow: 0 10px 20px rgba(14, 165, 233, 0.2); }
+        .pill i { color: var(--blue-neon); }
+
+        /* --- Navigation UI --- */
+        .controls { position: fixed; bottom: 30px; right: 30px; z-index: 100; display: flex; gap: 10px; }
+        .btn-nav {
+            width: clamp(45px, 6vw, 56px); height: clamp(45px, 6vw, 56px); border-radius: 50%;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);
+            color: white; font-size: clamp(16px, 3vw, 20px); cursor: pointer;
+            backdrop-filter: blur(10px); transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-nav:hover { background: rgba(56, 189, 248, 0.2); border-color: var(--blue-neon); box-shadow: 0 0 20px rgba(56, 189, 248, 0.4); transform: scale(1.1); }
+
+        .progress-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; gap: clamp(8px, 2vw, 16px); z-index: 100; }
+        .dot {
+            width: clamp(8px, 1.5vw, 12px); height: clamp(8px, 1.5vw, 12px); border-radius: 50%;
+            background: rgba(255,255,255,0.2); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .dot.active { background: var(--blue-neon); transform: scale(1.5); box-shadow: 0 0 15px var(--blue-neon); }
+
+        /* --- Entrance Animations --- */
+        .slide .anim-up { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .slide.active .anim-up { opacity: 1; transform: translateY(0); }
+        .slide.active .d-1 { transition-delay: 0.2s; }
+        .slide.active .d-2 { transition-delay: 0.4s; }
+        .slide.active .d-3 { transition-delay: 0.6s; }
+        .slide.active .d-4 { transition-delay: 0.8s; }
+
+        /* =========================================
+           RESPONSIVE DESIGN (Media Queries)
+           ========================================= */
+
+        /* Tablets & Small Laptops */
+        @media (max-width: 1024px) {
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            /* Center the last item in a 3-item grid if it spans 2 cols */
+            .grid-3 > div:last-child:nth-child(3) { grid-column: 1 / -1; } 
+            
+            .slide-content-wrapper { padding: 20px 0 80px 0; }
+        }
+
+        /* Large Smartphones & Portrait Tablets */
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; gap: 2rem; }
+            .grid-3 { grid-template-columns: 1fr; gap: 1.5rem; }
+            .grid-3 > div:last-child:nth-child(3) { grid-column: auto; } /* reset col span */
+
+            h2 { text-align: left; }
+            .metric-big { text-align: left; }
+            .metric-label { text-align: left; }
+
+            /* Switch metrics slide alignment on mobile */
+            #metricsSlide .grid-3 > div { text-align: left !important; display: flex; flex-direction: column; align-items: flex-start; }
+            #metricsSlide .glass-card { text-align: left; }
+
+            /* Adjust controls position */
+            .controls { bottom: 20px; right: 20px; }
+            .progress-container { bottom: 30px; }
+            
+            .slide { align-items: flex-start; padding: 20px 5%; }
+            .slide-content-wrapper { justify-content: flex-start; padding-top: 40px; }
+            
+            .glass-card { height: auto; } /* Cards grow with content */
+        }
+
+        /* Small Smartphones */
+        @media (max-width: 480px) {
+            .controls { display: none; } /* Hide arrows on tiny screens, rely on swipe/dots */
+            .progress-container { bottom: 20px; }
+            .contact-pills { flex-direction: column; width: 100%; }
+            .pill { width: 100%; justify-content: center; }
+            .glass-card { padding: 1.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Interactive Background -->
+    <div class="ambient-bg">
+        <div class="cyber-grid"></div>
+        <div class="orb orb-1" id="orb1"></div>
+        <div class="orb orb-2" id="orb2"></div>
+        <div class="orb orb-3" id="orb3"></div>
+    </div>
+
+    <div id="deck">
+        
+        <!-- Slide 1: Hero -->
+        <section class="slide active">
+            <div class="slide-content-wrapper" style="text-align: left;">
+                <span class="hero-subtitle anim-up glow-text">Infrastructure of Trust</span>
+                <h1 class="anim-up d-1 text-gradient glow-text">ProtoQol</h1>
+                <p class="hero-desc anim-up d-2">Автономная верификация социальных и городских данных на базе мультиагентного ИИ и Blockchain.</p>
+                
+                <div class="contact-pills anim-up d-3">
+                    <div class="pill"><i class="fa-solid fa-user"></i> Алихан Бахтыбай</div>
+                    <div class="pill"><i class="fa-solid fa-envelope"></i> riskulovakorpus@gmail.com</div>
+                    <div class="pill"><i class="fa-solid fa-phone"></i> +7 707 712 0190</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 2: Problem -->
+        <section class="slide">
+            <div class="slide-content-wrapper">
+                <h2 class="anim-up text-gradient">Почему текущий контроль не работает?</h2>
+                <div class="grid-3">
+                    <div class="glass-card anim-up d-1">
+                        <div class="icon-box" style="color: #f87171; background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); box-shadow: 0 0 20px rgba(248,113,113,0.2);"><i class="fa-solid fa-hourglass-end"></i></div>
+                        <h3>Медленно</h3>
+                        <p>Ручной аудит социальных проектов занимает до 4 недель. Инфраструктура ждет бюрократию.</p>
+                    </div>
+                    <div class="glass-card anim-up d-2">
+                        <div class="icon-box" style="color: #fbbf24; background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); box-shadow: 0 0 20px rgba(251,191,36,0.2);"><i class="fa-solid fa-receipt"></i></div>
+                        <h3>Дорого</h3>
+                        <p>Выездные комиссии и эксперты обходятся бюджету государства в миллионы тенге ежемесячно.</p>
+                    </div>
+                    <div class="glass-card anim-up d-3">
+                        <div class="icon-box" style="color: #f87171; background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); box-shadow: 0 0 20px rgba(248,113,113,0.2);"><i class="fa-solid fa-eye-slash"></i></div>
+                        <h3>Слепая зона</h3>
+                        <p>Выборо проверка охватывает менее 5% фактов. Субъективность порождает коррупционные риски.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 3: Solution -->
+        <section class="slide">
+            <div class="slide-content-wrapper grid-2">
+                <div class="anim-up d-1">
+                    <span class="hero-subtitle">Решение</span>
+                    <h2 style="text-align: left; margin-bottom: 1.5rem;" class="text-gradient">«Этика как услуга»</h2>
+                    <p style="margin-bottom: 2rem; color: #f8fafc;">Мы заменяем ручной контроль мультиагентной системой <strong class="glow-text">«Council of Beys»</strong>.</p>
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div class="pill" style="background: rgba(14,165,233,0.1);"><i class="fa-solid fa-bolt"></i> Мгновенная проверка фактов</div>
+                        <div class="pill" style="background: rgba(14,165,233,0.1);"><i class="fa-solid fa-shield-halved"></i> Неподкупность алгоритмов</div>
+                        <div class="pill" style="background: rgba(14,165,233,0.1);"><i class="fa-solid fa-network-wired"></i> Масштабируемость на весь город</div>
+                    </div>
+                </div>
+                <div class="glass-card anim-up d-2" style="background: linear-gradient(180deg, rgba(14,165,233,0.15) 0%, rgba(2,6,23,0.5) 100%); text-align: center; align-items: center; justify-content: center;">
+                    <div style="position:relative; display:inline-block;">
+                        <i class="fa-solid fa-microchip glow-text" style="font-size: clamp(60px, 10vw, 100px); color: var(--blue-neon); margin-bottom: 2rem; position:relative; z-index:2;"></i>
+                        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:150px; height:150px; background:var(--blue-neon); filter:blur(60px); opacity:0.4; z-index:1;"></div>
+                    </div>
+                    <h3 class="text-gradient glow-text">Автономный ИИ-движок</h3>
+                    <p>Система верифицирует фото, гео-теги и время, исключая дипфейки и манипуляции с данными без участия человека.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: Architecture -->
+        <section class="slide">
+            <div class="slide-content-wrapper">
+                <h2 class="anim-up text-gradient">Архитектура доверия</h2>
+                <div class="grid-3 anim-up d-1" style="margin-top: clamp(2rem, 4vw, 4rem);">
+                    <div class="glass-card">
+                        <div class="step-number">01</div>
+                        <h3>Data Input</h3>
+                        <p>Сбор данных через API или мобильные интерфейсы. IoT, фото с метаданными и геолокация.</p>
+                    </div>
+                    <div class="glass-card" style="border-color: rgba(56,189,248,0.5); box-shadow: 0 0 40px rgba(14,165,233,0.2);">
+                        <div class="step-number" style="-webkit-text-stroke: 2px var(--blue-neon); color: rgba(56,189,248,0.1);">02</div>
+                        <h3 class="text-gradient glow-text">AI Analytics</h3>
+                        <p>Движок «Council of Beys» проводит кросс-валидацию и проверяет подлинность события за секунды.</p>
+                    </div>
+                    <div class="glass-card">
+                        <div class="step-number">03</div>
+                        <h3>Final Ledger</h3>
+                        <p>Результат фиксируется в смарт-контракте Blockchain как неизменяемый и юридически значимый факт.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 5: Metrics (With Animated Counters) -->
+        <section class="slide" id="metricsSlide">
+            <div class="slide-content-wrapper">
+                <h2 class="anim-up text-gradient">Математика эффективности</h2>
+                <div class="grid-3 anim-up d-1" style="margin-top: clamp(2rem, 5vw, 5rem); text-align: center;">
+                    <div>
+                        <div class="metric-big text-gradient glow-text"><span class="counter" data-target="3" data-decimals="0">0</span>s</div>
+                        <div class="metric-label">На один отчет</div>
+                    </div>
+                    <div>
+                        <div class="metric-big text-gradient glow-text">$<span class="counter" data-target="0.01" data-decimals="2">0.00</span></div>
+                        <div class="metric-label">Цена проверки</div>
+                    </div>
+                    <div>
+                        <div class="metric-big text-gradient glow-text"><span class="counter" data-target="100" data-decimals="0">0</span>%</div>
+                        <div class="metric-label">Охват данных</div>
+                    </div>
+                </div>
+                <div class="glass-card anim-up d-2" style="margin-top: clamp(2rem, 5vw, 6rem); text-align: center; background: rgba(56,189,248,0.05); border-color: rgba(56,189,248,0.3); justify-content: center;">
+                    <p style="font-size: clamp(1.2rem, 3vw, 2rem); color: #f8fafc;">В <strong class="text-gradient glow-text"><span class="counter" data-target="5000000" data-decimals="0" data-spaces="true">0</span> раз дешевле</strong> традиционного аудита.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: Value -->
+        <section class="slide">
+            <div class="slide-content-wrapper">
+                <h2 class="anim-up text-gradient">Ценность для государства</h2>
+                <div class="grid-2 anim-up d-1">
+                    <div class="glass-card">
+                        <div class="icon-box"><i class="fa-solid fa-link"></i></div>
+                        <h3 class="text-gradient glow-text">Абсолютная прозрачность</h3>
+                        <p>Полное исключение коррупционных схем и "мертвых душ" при распределении социальных грантов и городского бюджета.</p>
+                    </div>
+                    <div class="glass-card">
+                        <div class="icon-box"><i class="fa-solid fa-globe"></i></div>
+                        <h3 class="text-gradient glow-text">ESG-Стандарты</h3>
+                        <p>Автоматическая подготовка достоверной отчетности международного уровня для привлечения иностранных инвесторов.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 7: Traction -->
+        <section class="slide">
+            <div class="slide-content-wrapper grid-2">
+                <div class="anim-up d-1">
+                    <h2 style="text-align: left;" class="text-gradient">Статус проекта</h2>
+                    <p style="margin-bottom: clamp(1.5rem, 3vw, 3rem);">Технология вышла из стадии идеи и готовится к полевым испытаниям.</p>
+                    
+                    <div class="glass-card" style="padding: clamp(1.5rem, 3vw, 2.5rem); background: rgba(2,6,23,0.6);">
+                        <h3 style="font-size: clamp(1rem, 2vw, 1.2rem); text-transform: uppercase; color: var(--text-muted); letter-spacing: 2px;">Технологический стек (MVP)</h3>
+                        <p style="color: #f8fafc; font-weight: 500; margin-top: 1rem;">FastAPI + AI Agents + Anchor Framework (Solana).<br><br><span class="glow-text" style="color: var(--blue-neon); font-size: clamp(1.1rem, 2vw, 1.4rem);"><i class="fa-solid fa-check-circle"></i> Код готов к деплою.</span></p>
+                    </div>
+                </div>
+                <div class="glass-card anim-up d-2" style="border-left: 4px solid var(--blue-neon); background: linear-gradient(90deg, rgba(56,189,248,0.1) 0%, transparent 100%);">
+                    <div class="icon-box"><i class="fa-solid fa-rocket"></i></div>
+                    <h3 class="text-gradient glow-text">Планы по пилоту</h3>
+                    <p style="font-size: clamp(1.1rem, 2.5vw, 1.5rem); color: #f8fafc; line-height: 1.6;">Планируется запуск пилотного проекта совместно с <strong>молодежным крылом политической партии</strong>.</p>
+                    <div class="pill" style="margin-top: 2rem; background: rgba(56,189,248,0.2); border-color: var(--blue-neon);">
+                        <i class="fa-solid fa-location-dot"></i> Локация: г. Актобе
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 8: Outro -->
+        <section class="slide">
+            <div class="slide-content-wrapper" style="text-align: center; align-items: center;">
+                <h1 class="anim-up d-1 text-gradient glow-text" style="font-size: clamp(4rem, 12vw, 8rem); margin-bottom: 0;">ProtoQol</h1>
+                <p class="hero-subtitle anim-up d-2" style="margin-top: 1rem; font-size: clamp(1.2rem, 3vw, 2rem);">Стандарт доверия цифрового города</p>
+                
+                <div class="anim-up d-3" style="margin-top: clamp(3rem, 6vw, 5rem);">
+                    <p style="font-size: clamp(1.5rem, 4vw, 2rem); color: #f8fafc; font-weight: 700;">Алихан Бахтыбай</p>
+                    <p style="font-size: clamp(1.2rem, 3vw, 1.8rem); margin-top: 0.5rem; color: var(--blue-neon);">+7 707 712 01 90</p>
+                    <div style="width: 100px; height: 2px; background: var(--blue-neon); margin: 2rem auto; box-shadow: 0 0 10px var(--blue-neon);"></div>
+                    <p style="font-size: clamp(0.9rem, 2vw, 1.2rem); color: var(--text-muted); text-transform: uppercase; letter-spacing: 4px;">Astana Innovations Accelerator 2026</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- UI Controls -->
+    <div class="progress-container" id="dots"></div>
+    <div class="controls">
+        <button class="btn-nav" id="prevBtn"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="btn-nav" id="nextBtn"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+
+    <script>
+        // --- Slide Navigation Logic ---
+        const slides = document.querySelectorAll('.slide');
+        const dotsContainer = document.getElementById('dots');
+        let currentSlide = 0;
+        let countersAnimated = false;
+
+        // Generate Dots
+        slides.forEach((_, index) => {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            if (index === 0) dot.classList.add('active');
+            dot.addEventListener('click', () => goToSlide(index));
+            dotsContainer.appendChild(dot);
+        });
+
+        const dots = document.querySelectorAll('.dot');
+
+        function updateUI() {
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                    // Reset scroll to top when entering a slide
+                    slide.scrollTop = 0;
+                    if(slide.id === 'metricsSlide' && !countersAnimated) {
+                        setTimeout(() => animateAllCounters(slide), 600);
+                        countersAnimated = true;
+                    }
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateUI();
+        }
+
+        document.getElementById('nextBtn').addEventListener('click', nextSlide);
+        document.getElementById('prevBtn').addEventListener('click', prevSlide);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space' || e.key === 'Enter') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // Swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            // Require a minimum swipe distance to avoid false triggers
+            const swipeThreshold = 50; 
+            if (touchEndX < touchStartX - swipeThreshold) nextSlide();
+            if (touchEndX > touchStartX + swipeThreshold) prevSlide();
+        }
+
+        // --- Number Counter Animation Logic ---
+        function animateValue(obj, start, end, duration, decimals, useSpaces) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 4); // easeOutQuart
+                let current = start + (end - start) * ease;
+                
+                if (decimals > 0) {
+                    obj.innerHTML = current.toFixed(decimals);
+                } else {
+                    let val = Math.floor(current);
+                    if (useSpaces) {
+                        obj.innerHTML = val.toLocaleString('ru-RU').replace(/,/g, ' ');
+                    } else {
+                        obj.innerHTML = val;
+                    }
+                }
+                
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    if(decimals > 0) obj.innerHTML = end.toFixed(decimals);
+                    else if (useSpaces) obj.innerHTML = end.toLocaleString('ru-RU').replace(/,/g, ' ');
+                    else obj.innerHTML = end;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function animateAllCounters(slideElement) {
+            const counters = slideElement.querySelectorAll('.counter');
+            counters.forEach(counter => {
+                const target = parseFloat(counter.getAttribute('data-target'));
+                const decimals = parseInt(counter.getAttribute('data-decimals') || '0');
+                const useSpaces = counter.getAttribute('data-spaces') === 'true';
+                
+                animateValue(counter, 0, target, 2000, decimals, useSpaces);
+            });
+        }
+
+        // --- Ambient Mouse Parallax Effect (Only active on larger screens) ---
+        const orb1 = document.getElementById('orb1');
+        const orb2 = document.getElementById('orb2');
+        
+        document.addEventListener('mousemove', (e) => {
+            if (window.innerWidth <= 768) return; // Disable parallax on mobile to save performance
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            orb1.style.transform = `translate(${x * -50}px, ${y * -50}px)`;
+            orb2.style.transform = `translate(${x * 50}px, ${y * 50}px)`;
+        });
+
+    </script>
+</body>
+</html>
